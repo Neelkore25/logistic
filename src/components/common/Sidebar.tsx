@@ -124,14 +124,6 @@ export const Sidebar: React.FC = () => {
       icon: CreditCard,
       badge: 'SaaS Pro',
       badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-    },
-    {
-      id: 'database',
-      labelKey: 'navDatabase',
-      defaultLabel: 'Live Database',
-      icon: Database,
-      badge: 'IndexedDB',
-      badgeColor: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
     }
   ];
 

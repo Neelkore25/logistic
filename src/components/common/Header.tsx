@@ -12,7 +12,9 @@ import {
   Sparkles,
   ShieldCheck,
   Building,
-  UserCheck
+  UserCheck,
+  Database,
+  ShieldAlert
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -27,7 +29,8 @@ export const Header: React.FC = () => {
     logout,
     openDictionary,
     readinessScore,
-    openOnboarding
+    openOnboarding,
+    setActiveTab
   } = useApp();
 
   const { currentLanguage, setLanguage, t } = useLanguage();
@@ -237,6 +240,17 @@ export const Header: React.FC = () => {
                   >
                     <Sparkles className="w-3.5 h-3.5 text-teal-500" />
                     <span>View Onboarding Stepper</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      setActiveTab('database');
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 flex items-center gap-2 font-semibold"
+                  >
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Admin Database (Protected)</span>
                   </button>
 
                   <button
