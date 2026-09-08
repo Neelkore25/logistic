@@ -19,6 +19,7 @@ import { ProfitabilitySimulator } from './components/simulator/ProfitabilitySimu
 import { LogisticsPlanner } from './components/logistics/LogisticsPlanner';
 import { ShipmentTracking } from './components/shipment/ShipmentTracking';
 import { PaymentsSection } from './components/payments/PaymentsSection';
+import { DatabaseViewer } from './components/database/DatabaseViewer';
 import { AiDocumentAgentModal } from './components/ai-agent/AiDocumentAgentModal';
 import { ExportDictionaryModal } from './components/help/ExportDictionaryModal';
 import {
@@ -86,6 +87,8 @@ const MainAppLayout: React.FC = () => {
         return <ShipmentTracking />;
       case 'payments':
         return <PaymentsSection />;
+      case 'database':
+        return <DatabaseViewer />;
       default:
         return <DashboardHome />;
     }
