@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-primary: #f8fafc;
+    --color-surface: #ffffff;
+    --color-surface-glass: rgba(255, 255, 255, 0.82);
+    --color-border-glass: rgba(226, 232, 240, 0.8);
+  }
+
+  .dark {
+    --color-bg-primary: #070f1e;
+    --color-surface: #0a192f;
+    --color-surface-glass: rgba(15, 36, 66, 0.75);
+    --color-border-glass: rgba(43, 82, 136, 0.35);
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* Glassmorphic utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 36, 66, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(43, 82, 136, 0.35);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: all 0.2s ease-in-out;
+}
+
+.dark .glass-card {
+  background: rgba(15, 36, 66, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 96, 150, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-card:hover {
+  border-color: rgba(20, 184, 166, 0.5);
+  transform: translateY(-2px);
+}
+
+.solid-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.dark .solid-card {
+  background: #0d1e38;
+  border: 1px solid #1e3a63;
+}
+
+/* India to World Subtle Gradient */
+.bg-india-world {
+  background: linear-gradient(135deg, #0a192f 0%, #0d2847 40%, #0d425c 75%, #0f566e 100%);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s infinite ease-in-out;
+}
