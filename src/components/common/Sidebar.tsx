@@ -13,7 +13,8 @@ import {
   Compass,
   Ship,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  CreditCard
 } from 'lucide-react';
 
 interface NavItem {
@@ -26,7 +27,16 @@ interface NavItem {
 }
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, documents, consistencyData, openDictionary, openOnboarding } = useApp();
+  const {
+    activeTab,
+    setActiveTab,
+    documents,
+    consistencyData,
+    readinessScore,
+    isReadinessAssessed,
+    openDictionary,
+    openOnboarding
+  } = useApp();
   const { t } = useLanguage();
 
   const missingDocsCount = documents.filter(d => d.mandatory && d.status === 'missing').length;
@@ -43,8 +53,10 @@ export const Sidebar: React.FC = () => {
       labelKey: 'assessment',
       defaultLabel: 'Export Eligibility',
       icon: ShieldCheck,
-      badge: 'Score 82',
-      badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+      badge: isReadinessAssessed ? `${readinessScore}%` : 'Pending',
+      badgeColor: isReadinessAssessed && readinessScore >= 80
+        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
     },
     {
       id: 'products',
@@ -65,8 +77,12 @@ export const Sidebar: React.FC = () => {
       labelKey: 'consistencyChecker',
       defaultLabel: 'Consistency Checker',
       icon: FileCheck2,
-      badge: !consistencyData.isConsistent ? 'Review' : 'Match',
-      badgeColor: !consistencyData.isConsistent ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+      badge: !consistencyData ? 'Pending' : !consistencyData.isConsistent ? 'Review' : 'Match',
+      badgeColor: !consistencyData
+        ? 'bg-slate-100 text-slate-600 dark:bg-navy-800 dark:text-slate-300'
+        : !consistencyData.isConsistent
+        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
     },
     {
       id: 'packaging',
@@ -99,6 +115,14 @@ export const Sidebar: React.FC = () => {
       icon: Ship,
       badge: 'Live',
       badgeColor: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 animate-pulse'
+    },
+    {
+      id: 'payments',
+      labelKey: 'navPayments',
+      defaultLabel: 'Pricing & Plans',
+      icon: CreditCard,
+      badge: 'SaaS Pro',
+      badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
     }
   ];
 

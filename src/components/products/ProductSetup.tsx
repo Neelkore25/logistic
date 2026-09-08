@@ -4,6 +4,7 @@ import { ProductType } from '../../types/export';
 import { HsCodeSearchModal } from './HsCodeSearchModal';
 import { ProductCard } from './ProductCard';
 import { HsCodeRecord } from '../../data/hsCodes';
+import { categorizationService } from '../../services/categorizationService';
 import {
   Package,
   Search,
@@ -12,7 +13,8 @@ import {
   CheckCircle2,
   Sparkles,
   Info,
-  Layers
+  Layers,
+  PackageSearch
 } from 'lucide-react';
 
 export const ProductSetup: React.FC = () => {
@@ -20,18 +22,32 @@ export const ProductSetup: React.FC = () => {
 
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
-  // Form states
+  // Form states - clean empty initial states
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [origin, setOrigin] = useState('Maharashtra, India');
+  const [origin, setOrigin] = useState('');
   const [type, setType] = useState<ProductType>('food');
   const [hsCode, setHsCode] = useState('');
   const [description, setDescription] = useState('');
-  const [quantity, setQuantity] = useState<number>(1000);
+  const [quantity, setQuantity] = useState<string>('');
   const [unit, setUnit] = useState('Kilograms (kg)');
-  const [weight, setWeight] = useState<number>(1000);
-  const [dimensions, setDimensions] = useState('120 x 80 x 140 cm (4 Pallets)');
-  const [productValue, setProductValue] = useState<number>(750000);
+  const [weight, setWeight] = useState<string>('');
+  const [dimensions, setDimensions] = useState('');
+  const [productValue, setProductValue] = useState<string>('');
+
+  const handleNameChange = (val: string) => {
+    setName(val);
+    if (val.trim().length >= 2) {
+      const detected = categorizationService.detectCategory(val);
+      if (detected) {
+        setCategory(detected.category);
+        setType(detected.type);
+        if (detected.suggestedHs && !hsCode) {
+          setHsCode(detected.suggestedHs);
+        }
+      }
+    }
+  };
 
   const handleHsCodeSelected = (record: HsCodeRecord) => {
     setHsCode(record.code);
@@ -63,8 +79,13 @@ export const ProductSetup: React.FC = () => {
     // Reset fields to clean state
     setName('');
     setCategory('');
+    setOrigin('');
     setHsCode('');
     setDescription('');
+    setQuantity('');
+    setWeight('');
+    setDimensions('');
+    setProductValue('');
   };
 
   return (
@@ -124,7 +145,7 @@ export const ProductSetup: React.FC = () => {
                 type="text"
                 required
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => handleNameChange(e.target.value)}
                 placeholder="e.g. Organic Cashew Nuts W320"
                 className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
               />
@@ -233,7 +254,7 @@ export const ProductSetup: React.FC = () => {
                 <input
                   type="number"
                   value={quantity}
-                  onChange={e => setQuantity(Number(e.target.value))}
+                  onChange={e => setQuantity(e.target.value)}
                   className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>
@@ -259,7 +280,7 @@ export const ProductSetup: React.FC = () => {
                 <input
                   type="number"
                   value={productValue}
-                  onChange={e => setProductValue(Number(e.target.value))}
+                  onChange={e => setProductValue(e.target.value)}
                   className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>
@@ -274,7 +295,7 @@ export const ProductSetup: React.FC = () => {
                 <input
                   type="number"
                   value={weight}
-                  onChange={e => setWeight(Number(e.target.value))}
+                  onChange={e => setWeight(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>
@@ -318,37 +339,52 @@ export const ProductSetup: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {products.map(prod => (
-              <ProductCard
-                key={prod.id}
-                product={prod}
-                isSelected={selectedProduct.id === prod.id}
-                onSelect={() => selectProductById(prod.id)}
-              />
-            ))}
-          </div>
-
-          {/* Active Product Highlight banner */}
-          <div className="p-4 rounded-xl bg-teal-50/70 dark:bg-navy-850 border border-teal-200 dark:border-teal-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-teal-500 text-white">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
-                  Currently Active Consignment Product
-                </span>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">
-                  {selectedProduct.name} (HS {selectedProduct.hsCode})
-                </p>
-              </div>
+          {products.length === 0 ? (
+            <div className="p-8 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3 bg-white/40 dark:bg-navy-900/40">
+              <PackageSearch className="w-10 h-10 text-teal-500/70 mx-auto" />
+              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                No Export Products Added Yet
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                Fill out the registration form on the left or use the HS Code lookup to register your primary export commodity.
+              </p>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {products.map(prod => (
+                  <ProductCard
+                    key={prod.id}
+                    product={prod}
+                    isSelected={Boolean(selectedProduct && selectedProduct.id === prod.id)}
+                    onSelect={() => selectProductById(prod.id)}
+                  />
+                ))}
+              </div>
 
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-white dark:bg-navy-900 border border-teal-400 text-teal-700 dark:text-teal-300">
-              Readiness: {selectedProduct.readinessScore}%
-            </span>
-          </div>
+              {selectedProduct && (
+                <div className="p-4 rounded-xl bg-teal-50/70 dark:bg-navy-850 border border-teal-200 dark:border-teal-800/80 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-teal-500 text-white">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
+                        Currently Active Consignment Product
+                      </span>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {selectedProduct.name} (HS {selectedProduct.hsCode})
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white dark:bg-navy-900 border border-teal-400 text-teal-700 dark:text-teal-300">
+                    Readiness: {selectedProduct.readinessScore}%
+                  </span>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
       </div>

@@ -16,14 +16,18 @@ import {
   Download
 } from 'lucide-react';
 
+import { documentService } from '../../services/documentService';
+
 export const DocumentVault: React.FC = () => {
-  const { documents, updateDocumentStatus, openAiDocumentAgent, triggerToast } = useApp();
+  const { documents, uploadDocumentFile, openAiDocumentAgent, triggerToast } = useApp();
 
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
   const [uploadTargetDoc, setUploadTargetDoc] = useState<DocumentItem | null>(null);
-  const [uploadFileName, setUploadFileName] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const availableCount = documents.filter(d => d.status === 'available').length;
   const pendingCount = documents.filter(d => d.status === 'pending').length;
@@ -38,13 +42,38 @@ export const DocumentVault: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleManualUpload = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const validation = documentService.validateFile(file);
+      if (!validation.valid) {
+        setUploadError(validation.error || 'Invalid file');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleManualUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadTargetDoc) return;
-    const finalName = uploadFileName || `${uploadTargetDoc.code}_Signed_Copy.pdf`;
-    updateDocumentStatus(uploadTargetDoc.id, 'available', finalName);
-    setUploadTargetDoc(null);
-    setUploadFileName('');
+    if (!selectedFile) {
+      setUploadError('Please select a file to upload.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      await uploadDocumentFile(uploadTargetDoc.id, selectedFile);
+      setUploadTargetDoc(null);
+      setSelectedFile(null);
+    } catch (err: any) {
+      setUploadError(err?.message || 'File upload failed');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -130,7 +159,8 @@ export const DocumentVault: React.FC = () => {
             onPreview={d => setPreviewDoc(d)}
             onUploadClick={d => {
               setUploadTargetDoc(d);
-              setUploadFileName(`${d.code}_ExportCopy.pdf`);
+              setSelectedFile(null);
+              setUploadError(null);
             }}
           />
         ))}
@@ -155,13 +185,23 @@ export const DocumentVault: React.FC = () => {
               </button>
             </div>
 
+            {/* If doc has image preview */}
+            {previewDoc.fileData && previewDoc.fileData.startsWith('data:image') && (
+              <div className="max-h-56 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-navy-950">
+                <img src={previewDoc.fileData} alt={previewDoc.name} className="max-h-56 object-contain" />
+              </div>
+            )}
+
             <div className="space-y-2 text-xs font-mono bg-slate-50 dark:bg-navy-850 p-4 rounded-xl border border-slate-200 dark:border-slate-800 leading-relaxed">
               <p className="text-teal-600 dark:text-teal-400 font-bold">// DOCUMENT VERIFICATION RECORD</p>
               <p>CODE: {previewDoc.code}</p>
               <p>ISSUING AUTHORITY: {previewDoc.authority}</p>
               <p>STATUS: {previewDoc.status.toUpperCase()}</p>
-              <p>FILE NAME: {previewDoc.fileName || 'Verified_Digital_Record.pdf'}</p>
-              <p>HASH: SHA-256 (Verifiable on ICEGATE / DGFT)</p>
+              <p>FILE NAME: {previewDoc.fileName || 'Not uploaded yet'}</p>
+              {previewDoc.fileSize && (
+                <p>SIZE: {typeof previewDoc.fileSize === 'number' ? (previewDoc.fileSize / 1024).toFixed(1) + ' KB' : previewDoc.fileSize}</p>
+              )}
+              <p>HASH: {previewDoc.checksum || 'Pending verification'}</p>
               <p className="text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
                 Purpose: {previewDoc.requiredFor}
               </p>
@@ -172,8 +212,18 @@ export const DocumentVault: React.FC = () => {
                 onClick={() => setPreviewDoc(null)}
                 className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-navy-800"
               >
-                Close Preview
+                Close
               </button>
+              {previewDoc.status === 'available' && (
+                <button
+                  type="button"
+                  onClick={() => documentService.downloadDocument(previewDoc)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 flex items-center gap-1.5 shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download File</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -185,7 +235,7 @@ export const DocumentVault: React.FC = () => {
           <div className="relative w-full max-w-md bg-white dark:bg-navy-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                Upload {uploadTargetDoc.code}
+                Upload {uploadTargetDoc.code} — {uploadTargetDoc.name}
               </h3>
               <button
                 onClick={() => setUploadTargetDoc(null)}
@@ -195,43 +245,66 @@ export const DocumentVault: React.FC = () => {
               </button>
             </div>
 
+            {uploadError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
+                {uploadError}
+              </div>
+            )}
+
             <form onSubmit={handleManualUpload} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Document File Name
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Select Document File (PDF, PNG, JPG)
                 </label>
                 <input
-                  type="text"
-                  required
-                  value={uploadFileName}
-                  onChange={e => setUploadFileName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  type="file"
+                  id="vault-file-input"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-              </div>
-
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-navy-850">
-                <Upload className="w-8 h-8 text-teal-500 mx-auto mb-2" />
-                <p className="font-bold text-slate-700 dark:text-slate-200">
-                  Click or drag signed PDF to upload
-                </p>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Supports PDF, PNG, JPG up to 15 MB
-                </p>
+                <label
+                  htmlFor="vault-file-input"
+                  className="border-2 border-dashed border-teal-500/40 hover:border-teal-500 rounded-xl p-6 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-navy-850 cursor-pointer block transition-colors"
+                >
+                  <Upload className="w-8 h-8 text-teal-500 mx-auto mb-2" />
+                  {selectedFile ? (
+                    <div>
+                      <p className="font-bold text-teal-600 dark:text-teal-300 truncate">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        {(selectedFile.size / 1024).toFixed(1)} KB — Click to choose different file
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="font-bold text-slate-700 dark:text-slate-200">
+                        Click to select document file
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Supports PDF, PNG, JPG up to 15 MB
+                      </p>
+                    </div>
+                  )}
+                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setUploadTargetDoc(null)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-500"
+                  className="px-4 py-2 rounded-xl text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500"
+                  disabled={!selectedFile || isUploading}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Confirm & Upload
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{isUploading ? 'Uploading...' : 'Save & Verify Document'}</span>
                 </button>
               </div>
             </form>

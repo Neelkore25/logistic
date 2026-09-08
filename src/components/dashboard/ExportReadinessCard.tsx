@@ -4,12 +4,16 @@ import { CircularProgress } from '../common/CircularProgress';
 import { ArrowRight, CheckCircle, AlertCircle, FileText, BoxSelect } from 'lucide-react';
 
 export const ExportReadinessCard: React.FC = () => {
-  const { readinessScore, setActiveTab, documents, packagingChecklist } = useApp();
+  const { readinessScore, isReadinessAssessed, setActiveTab, documents, packagingChecklist } = useApp();
 
   const missingDocs = documents.filter(d => d.mandatory && d.status === 'missing');
   const uncheckedPackaging = packagingChecklist.filter(p => !p.checked && p.isMandatory);
 
   const handleCompleteTasks = () => {
+    if (!isReadinessAssessed) {
+      setActiveTab('products');
+      return;
+    }
     if (missingDocs.length > 0) {
       setActiveTab('vault');
     } else if (uncheckedPackaging.length > 0) {
@@ -38,12 +42,18 @@ export const ExportReadinessCard: React.FC = () => {
               Export Readiness
             </h3>
             <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1">
-              {readinessScore >= 80 ? "You're almost ready to export." : "Action required to complete statutory compliance."}
+              {!isReadinessAssessed
+                ? 'Not Assessed Yet — Complete Initial Setup'
+                : readinessScore >= 80
+                ? "You're almost ready to export."
+                : 'Action required to complete statutory compliance.'}
             </p>
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Your readiness score is calculated dynamically based on statutory Indian export documents, packaging certification, and buyer agreements.
+            {!isReadinessAssessed
+              ? 'Your readiness score will be calculated dynamically based on real statutory Indian export documents, packaging checks, and product specifications.'
+              : 'Your readiness score is calculated dynamically based on statutory Indian export documents, packaging certification, and buyer agreements.'}
           </p>
 
           {/* Quick status breakdown badges */}
@@ -65,7 +75,7 @@ export const ExportReadinessCard: React.FC = () => {
               onClick={handleCompleteTasks}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-teal-500 to-sky-600 hover:from-teal-400 hover:to-sky-500 shadow-glow-teal transition-all transform active:scale-95 cursor-pointer"
             >
-              <span>Complete Remaining Tasks</span>
+              <span>{!isReadinessAssessed ? 'Start Setup & Add Product' : 'Complete Remaining Tasks'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -77,10 +87,14 @@ export const ExportReadinessCard: React.FC = () => {
             value={readinessScore}
             size={175}
             strokeWidth={14}
-            label="Readiness"
+            label={!isReadinessAssessed ? 'Pending' : 'Readiness'}
           />
           <span className="mt-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            {readinessScore >= 80 ? '🟢 Tier-1 Readiness' : '🟡 Incomplete Documentation'}
+            {!isReadinessAssessed
+              ? '⚪ Not Assessed Yet'
+              : readinessScore >= 80
+              ? '🟢 Tier-1 Readiness'
+              : '🟡 Incomplete Documentation'}
           </span>
         </div>
 

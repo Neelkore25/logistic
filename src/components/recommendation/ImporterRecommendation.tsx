@@ -22,12 +22,21 @@ export const ImporterRecommendation: React.FC = () => {
 
   // Mode A: Importer Known fields
   const [importerId, setImporterId] = useState('EORI-DE-9821034');
-  const [importerName, setImporterName] = useState(receiverProfile.businessName);
-  const [buyerCountry, setBuyerCountry] = useState(receiverProfile.country);
+  const [importerName, setImporterName] = useState(receiverProfile.businessName || 'Global Buyers Inc.');
+  const [buyerCountry, setBuyerCountry] = useState(receiverProfile.country || 'Germany');
   const [selectedTransport, setSelectedTransport] = useState<'ship' | 'plane' | 'cargo'>('ship');
 
+  const activeProduct = selectedProduct || {
+    id: 'placeholder',
+    name: 'Primary Export Cargo',
+    hsCode: '0801.32.00',
+    type: 'food' as const,
+    quantity: 1000,
+    unit: 'kg'
+  };
+
   // Mode B: Importer Unknown market recommendations
-  const marketOptions = MARKET_RECOMMENDATIONS[selectedProduct.type === 'textile' ? 'textile' : 'cashew'] || MARKET_RECOMMENDATIONS.cashew;
+  const marketOptions = MARKET_RECOMMENDATIONS[activeProduct.type === 'textile' ? 'textile' : 'cashew'] || MARKET_RECOMMENDATIONS.cashew;
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in">
@@ -129,7 +138,7 @@ export const ImporterRecommendation: React.FC = () => {
                 Recommended Mode of Transport & Cost Analysis
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Calculated for {selectedProduct.quantity.toLocaleString()} {selectedProduct.unit} from JNPT Mumbai to Port of Hamburg
+                Calculated for {activeProduct.quantity.toLocaleString()} {activeProduct.unit} from JNPT Mumbai to Port of Hamburg
               </p>
             </div>
 
@@ -291,7 +300,7 @@ export const ImporterRecommendation: React.FC = () => {
             <Sparkles className="w-5 h-5 text-teal-500 shrink-0" />
             <div className="text-xs text-teal-800 dark:text-teal-200">
               <span className="font-bold">AI Market Discovery:</span> Recommending the best available importing countries for{' '}
-              <strong>{selectedProduct.name} (HS {selectedProduct.hsCode})</strong> based on Indian trade agreements, tariff concessions, and freight economics.
+              <strong>{activeProduct.name} (HS {activeProduct.hsCode})</strong> based on Indian trade agreements, tariff concessions, and freight economics.
             </div>
           </div>
 

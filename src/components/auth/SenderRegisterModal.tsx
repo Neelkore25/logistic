@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ProductType } from '../../types/export';
+import { categorizationService } from '../../services/categorizationService';
 import {
   X,
   Building2,
@@ -11,7 +12,10 @@ import {
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
 
 interface SenderRegisterModalProps {
@@ -20,25 +24,31 @@ interface SenderRegisterModalProps {
 }
 
 export const SenderRegisterModal: React.FC<SenderRegisterModalProps> = ({ isOpen, onClose }) => {
-  const { login, updateUserProfile, addProduct, updateDocumentStatus } = useApp();
+  const { register, updateBusinessProfile, addProduct, updateDocumentStatus } = useApp();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Step 1: Business Information
-  const [businessName, setBusinessName] = useState('Sahyadri Organics & Agro Exports Pvt Ltd');
-  const [location, setLocation] = useState('Palghar, Maharashtra, India');
+  const [businessName, setBusinessName] = useState('');
+  const [location, setLocation] = useState('');
   const [businessType, setBusinessType] = useState('Private Limited (MSME Registered)');
-  const [contactNumber, setContactNumber] = useState('+91 98230 45678');
+  const [contactNumber, setContactNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [exportExperience, setExportExperience] = useState('First-Time Exporter (Tier-2 MSME)');
-  const [username, setUsername] = useState('sahyadri_exporter');
-  const [password, setPassword] = useState('Password@123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Step 2: Product Information
-  const [productName, setProductName] = useState('Organic Cashew Kernels W320');
-  const [productCategory, setProductCategory] = useState('Food & Edible Nuts');
-  const [productOrigin, setProductOrigin] = useState('Konkan / Maharashtra, India');
+  const [productName, setProductName] = useState('');
+  const [productCategory, setProductCategory] = useState('');
+  const [productOrigin, setProductOrigin] = useState('');
   const [productType, setProductType] = useState<ProductType>('food');
-  const [hsCode, setHsCode] = useState('08013200');
+  const [hsCode, setHsCode] = useState('');
 
   // Step 3: Business Documents & upload statuses
   const [uploadedDocs, setUploadedDocs] = useState<{
@@ -47,51 +57,118 @@ export const SenderRegisterModal: React.FC<SenderRegisterModalProps> = ({ isOpen
     gstin: boolean;
     iec: boolean;
   }>({
-    coReg: true,
-    pan: true,
-    gstin: true,
-    iec: false // user can test upload or leave missing
+    coReg: false,
+    pan: false,
+    gstin: false,
+    iec: false
   });
 
   if (!isOpen) return null;
 
-  const handleNext = () => {
+  const handleProductNameChange = (val: string) => {
+    setProductName(val);
+    if (val.trim().length >= 2) {
+      const detected = categorizationService.detectCategory(val);
+      if (detected) {
+        setProductCategory(detected.category);
+        setProductType(detected.type);
+        if (detected.suggestedHs && !hsCode) {
+          setHsCode(detected.suggestedHs);
+        }
+      }
+    }
+  };
+
+  const handleNext = async () => {
+    setError(null);
+
     if (step === 1) {
+      if (!businessName.trim()) {
+        setError('Please enter your business or legal enterprise name.');
+        return;
+      }
+      if (!email.trim() || !email.includes('@')) {
+        setError('Please enter a valid business email address.');
+        return;
+      }
+      if (!contactNumber.trim()) {
+        setError('Please enter your mobile or WhatsApp contact number.');
+        return;
+      }
+      if (!username.trim()) {
+        setError('Please choose a username for login.');
+        return;
+      }
+      if (!password || password.length < 6) {
+        setError('Password must be at least 6 characters.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match. Please re-type identical passwords.');
+        return;
+      }
       setStep(2);
     } else if (step === 2) {
       setStep(3);
     } else {
-      // Step 3 completed: Finalize registration
-      updateUserProfile({
-        businessName,
-        location,
-        businessType,
-        phone: contactNumber,
-        exportExperience,
-        username
-      });
+      // Step 3 completed: Finalize real user registration
+      setIsSubmitting(true);
+      try {
+        await register({
+          email: email.trim(),
+          username: username.trim(),
+          password,
+          role: 'sender',
+          tradeType: 'international',
+          businessName: businessName.trim()
+        });
 
-      addProduct({
-        name: productName,
-        category: productCategory,
-        origin: productOrigin,
-        type: productType,
-        hsCode,
-        description: `${productName} from ${productOrigin}`,
-        quantity: 1000,
-        unit: 'kg',
-        weight: 1000,
-        dimensions: '120 x 80 x 140 cm',
-        productValue: 820000,
-        certificationsNeeded: ['FSSAI', 'Certificate of Origin']
-      });
+        await updateBusinessProfile({
+          businessName: businessName.trim(),
+          location: location.trim() || 'India',
+          businessType,
+          phone: contactNumber.trim(),
+          exportExperience,
+          email: email.trim(),
+          username: username.trim()
+        });
 
-      if (uploadedDocs.iec) {
-        updateDocumentStatus('doc-iec', 'available', 'IEC_Sahyadri_DGFT.pdf');
+        if (productName.trim()) {
+          await addProduct({
+            name: productName.trim(),
+            category: productCategory.trim() || 'General Goods',
+            origin: productOrigin.trim() || 'India',
+            type: productType,
+            hsCode: hsCode.trim() || '00000000',
+            description: `${productName.trim()} ready for export`,
+            quantity: 100,
+            unit: 'Units',
+            weight: 100,
+            dimensions: 'Standard Export Crate',
+            productValue: 100000,
+            certificationsNeeded: ['Certificate of Origin']
+          });
+        }
+
+        if (uploadedDocs.iec) {
+          await updateDocumentStatus('doc-iec', 'available', 'IEC_Registration_Copy.pdf');
+        }
+        if (uploadedDocs.coReg) {
+          await updateDocumentStatus('doc-co-reg', 'available', 'Company_Registration.pdf');
+        }
+        if (uploadedDocs.gstin) {
+          await updateDocumentStatus('doc-gst', 'available', 'GSTIN_Registration.pdf');
+        }
+        if (uploadedDocs.pan) {
+          await updateDocumentStatus('doc-pan', 'available', 'PAN_Card.pdf');
+        }
+
+        onClose();
+      } catch (err: any) {
+        setError(err?.message || 'Registration failed. Please try again.');
+      } finally {
+        setIsSubmitting(false);
       }
-
-      login('sender', username);
-      onClose();
     }
   };
 
@@ -141,21 +218,47 @@ export const SenderRegisterModal: React.FC<SenderRegisterModalProps> = ({ isOpen
         {/* Modal Body */}
         <div className="p-6 space-y-4">
           
+          {/* Error notification banner */}
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* STEP 1: Business Information */}
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Business Name
+                    Registered Business Name *
                   </label>
                   <input
                     type="text"
+                    required
                     value={businessName}
                     onChange={e => setBusinessName(e.target.value)}
+                    placeholder="e.g. Acme Agro Exports Pvt Ltd"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Business Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="e.g. exports@acmeagro.in"
+                    className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Location / City & State
@@ -164,6 +267,20 @@ export const SenderRegisterModal: React.FC<SenderRegisterModalProps> = ({ isOpen
                     type="text"
                     value={location}
                     onChange={e => setLocation(e.target.value)}
+                    placeholder="e.g. Pune, Maharashtra, India"
+                    className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Contact Number (Mobile / WhatsApp) *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={contactNumber}
+                    onChange={e => setContactNumber(e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
@@ -187,54 +304,78 @@ export const SenderRegisterModal: React.FC<SenderRegisterModalProps> = ({ isOpen
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Contact Number (Mobile / WhatsApp)
+                    Current Export Experience
                   </label>
-                  <input
-                    type="text"
-                    value={contactNumber}
-                    onChange={e => setContactNumber(e.target.value)}
+                  <select
+                    value={exportExperience}
+                    onChange={e => setExportExperience(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
-                  />
+                  >
+                    <option value="First-Time Exporter (Tier-2 MSME)">First-Time Exporter (Tier-2 / Tier-3 MSME, No prior export)</option>
+                    <option value="Novice (1 to 3 shipments done)">Novice (1 to 3 shipments completed)</option>
+                    <option value="Regular Exporter (Frequent consignments)">Regular Exporter (Active shipments)</option>
+                  </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Current Export Experience
+                  Desired Username *
                 </label>
-                <select
-                  value={exportExperience}
-                  onChange={e => setExportExperience(e.target.value)}
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="e.g. acme_export"
                   className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
-                >
-                  <option value="First-Time Exporter (Tier-2 MSME)">First-Time Exporter (Tier-2 / Tier-3 MSME, No prior export)</option>
-                  <option value="Novice (1 to 3 shipments done)">Novice (1 to 3 shipments completed)</option>
-                  <option value="Regular Exporter (Frequent consignments)">Regular Exporter (Active shipments)</option>
-                </select>
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Desired Username
+                    Password *
                   </label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Min 6 characters"
+                      className="w-full pl-3 pr-10 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Password
+                    Confirm Password *
                   </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Re-type password"
+                      className="w-full pl-3 pr-10 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -246,13 +387,13 @@ export const SenderRegisterModal: React.FC<SenderRegisterModalProps> = ({ isOpen
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Primary Product Name
+                    Primary Product Name (Auto-detects category)
                   </label>
                   <input
                     type="text"
                     value={productName}
-                    onChange={e => setProductName(e.target.value)}
-                    placeholder="e.g. Organic Cashews / Cotton T-Shirt"
+                    onChange={e => handleProductNameChange(e.target.value)}
+                    placeholder="e.g. Organic Cashews / Basmati Rice / Cotton Shirt"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>

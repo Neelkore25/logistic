@@ -153,31 +153,40 @@ export const OnboardingStepper: React.FC = () => {
           )}
 
           {/* Step 2: Products */}
-          {currentStep === 2 && (
-            <div className="space-y-4 animate-in fade-in">
-              <div className="p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 text-xs text-teal-800 dark:text-teal-200">
-                <span className="font-bold">Product Readiness:</span> Review your primary export product and Harmonized System (HS) code.
-              </div>
+          {currentStep === 2 && (() => {
+            const product = selectedProduct || {
+              name: 'Pending Product Addition',
+              hsCode: '------',
+              description: 'Configure your primary export commodity in the Product Setup screen.',
+              category: 'General Goods',
+              origin: 'India'
+            };
+            return (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 text-xs text-teal-800 dark:text-teal-200">
+                  <span className="font-bold">Product Readiness:</span> Review your primary export product and Harmonized System (HS) code.
+                </div>
 
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-navy-850 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                    {selectedProduct.name}
-                  </h4>
-                  <span className="px-2 py-0.5 rounded text-xs font-bold bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300">
-                    HS {selectedProduct.hsCode}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300">
-                  {selectedProduct.description}
-                </p>
-                <div className="flex items-center gap-4 text-xs text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <span>Category: {selectedProduct.category}</span>
-                  <span>Origin: {selectedProduct.origin}</span>
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-navy-850 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                      {product.name}
+                    </h4>
+                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300">
+                      HS {product.hsCode}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    {product.description}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <span>Category: {product.category}</span>
+                    <span>Origin: {product.origin}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Step 3: GST / IEC / Registrations */}
           {currentStep === 3 && (

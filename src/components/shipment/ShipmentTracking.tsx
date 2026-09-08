@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ShipmentReviewModal } from './ShipmentReviewModal';
 import {
   Ship,
   MapPin,
@@ -17,6 +18,7 @@ import {
 
 export const ShipmentTracking: React.FC = () => {
   const { activeShipment, advanceShipmentMilestone, selectedProduct, userProfile } = useApp();
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -47,6 +49,55 @@ export const ShipmentTracking: React.FC = () => {
     }
   };
 
+  if (!activeShipment) {
+    return (
+      <div className="space-y-6 pb-12 animate-in fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              Shipment Tracking & Telemetry
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Real-time intermodal GPS telemetry & port customs milestone tracking.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsReviewModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-500 to-sky-600 hover:from-teal-400 hover:to-sky-500 shadow-glow-teal flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <Ship className="w-4 h-4" />
+            <span>Create New Shipment</span>
+          </button>
+        </div>
+
+        <div className="glass-card rounded-2xl p-12 text-center border border-slate-200/80 dark:border-slate-700/60 shadow-lg space-y-4">
+          <div className="w-16 h-16 rounded-full bg-teal-500/10 text-teal-500 mx-auto flex items-center justify-center">
+            <Ship className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+            No Outbound Shipments In Transit
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Once you have registered your export products and verified mandatory statutory documents in the Document Vault, click "Create New Shipment" to initiate freight booking and GPS tracking.
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={() => setIsReviewModalOpen(true)}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 shadow-sm"
+            >
+              Initiate First Consignment Booking
+            </button>
+          </div>
+        </div>
+
+        <ShipmentReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in">
       
@@ -66,7 +117,7 @@ export const ShipmentTracking: React.FC = () => {
 
         {/* Action: Advance Tracking Simulator */}
         <button
-          onClick={advanceShipmentMilestone}
+          onClick={() => advanceShipmentMilestone()}
           className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-500 to-sky-600 hover:from-teal-400 hover:to-sky-500 shadow-glow-teal flex items-center gap-2 cursor-pointer transition-all"
           title="Simulate container moving forward along voyage"
         >

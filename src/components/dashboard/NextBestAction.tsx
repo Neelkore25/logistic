@@ -15,7 +15,7 @@ export const NextBestAction: React.FC = () => {
   // Find priority incomplete step
   const missingIec = documents.find(d => d.id === 'doc-iec' && d.status === 'missing');
   const missingDocs = documents.filter(d => d.mandatory && d.status === 'missing');
-  const hasInconsistency = !consistencyData.isConsistent;
+  const hasInconsistency = Boolean(consistencyData && !consistencyData.isConsistent);
   const uncheckedPackaging = packagingChecklist.filter(p => !p.checked && p.isMandatory);
 
   if (missingIec) {

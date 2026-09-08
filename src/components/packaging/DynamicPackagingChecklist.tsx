@@ -102,20 +102,28 @@ export const DynamicPackagingChecklist: React.FC = () => {
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
               1. Select Export Product
             </label>
-            <select
-              value={selectedProduct.id}
-              onChange={e => selectProductById(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-navy-850 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
-            >
-              {products.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.category} — HS {p.hsCode})
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] text-teal-600 dark:text-teal-400 mt-1">
-              Active Category: <span className="font-semibold uppercase">{selectedProduct.type}</span>
-            </p>
+            {products.length === 0 ? (
+              <div className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-navy-850 border border-slate-200 dark:border-slate-700 text-slate-500">
+                No products added yet. Add a product in Product Setup.
+              </div>
+            ) : (
+              <>
+                <select
+                  value={selectedProduct?.id || ''}
+                  onChange={e => selectProductById(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-navy-850 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
+                >
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.category} — HS {p.hsCode})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-teal-600 dark:text-teal-400 mt-1">
+                  Active Category: <span className="font-semibold uppercase">{selectedProduct?.type || 'Standard'}</span>
+                </p>
+              </>
+            )}
           </div>
 
           {/* Destination Country Selector */}
@@ -152,7 +160,7 @@ export const DynamicPackagingChecklist: React.FC = () => {
                 Dynamic Packing & Labelling Checklist
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Tailored for {selectedProduct.name} shipped to {activeCountry.name}
+                Tailored for {selectedProduct?.name || 'Export Cargo'} shipped to {activeCountry.name}
               </p>
             </div>
           </div>

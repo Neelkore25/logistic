@@ -18,6 +18,7 @@ import { ImporterRecommendation } from './components/recommendation/ImporterReco
 import { ProfitabilitySimulator } from './components/simulator/ProfitabilitySimulator';
 import { LogisticsPlanner } from './components/logistics/LogisticsPlanner';
 import { ShipmentTracking } from './components/shipment/ShipmentTracking';
+import { PaymentsSection } from './components/payments/PaymentsSection';
 import { AiDocumentAgentModal } from './components/ai-agent/AiDocumentAgentModal';
 import { ExportDictionaryModal } from './components/help/ExportDictionaryModal';
 import {
@@ -83,6 +84,8 @@ const MainAppLayout: React.FC = () => {
         return <LogisticsPlanner />;
       case 'shipments':
         return <ShipmentTracking />;
+      case 'payments':
+        return <PaymentsSection />;
       default:
         return <DashboardHome />;
     }

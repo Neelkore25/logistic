@@ -16,6 +16,8 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+import { aiDocumentService } from '../../services/aiDocumentService';
+
 export const AiDocumentAgentModal: React.FC = () => {
   const {
     aiModalOpen,
@@ -27,12 +29,13 @@ export const AiDocumentAgentModal: React.FC = () => {
 
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Form details collected by AI for IEC application
-  const [panNumber, setPanNumber] = useState('AAACS1234F');
-  const [bankAccount, setBankAccount] = useState('98120019284410 (HDFC Bank Forex Branch)');
-  const [adCode, setAdCode] = useState('0291823');
-  const [directorAadhaar, setDirectorAadhaar] = useState('XXXX-XXXX-8921 (Sunil Patil)');
+  // Form details collected by AI for IEC application - clean initial states
+  const [panNumber, setPanNumber] = useState(userProfile?.pan || '');
+  const [bankAccount, setBankAccount] = useState('');
+  const [adCode, setAdCode] = useState('');
+  const [directorAadhaar, setDirectorAadhaar] = useState('');
   const [dgftCategory, setDgftCategory] = useState('Merchant cum Manufacturer Exporter');
+  const [generatedDraftText, setGeneratedDraftText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
   if (!aiModalOpen || !targetAiDocument) return null;
@@ -40,20 +43,33 @@ export const AiDocumentAgentModal: React.FC = () => {
   const docName = targetAiDocument.name;
   const isIec = targetAiDocument.id === 'doc-iec';
 
-  const handleGenerateDraft = () => {
+  const handleGenerateDraft = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      const draft = await aiDocumentService.generateDossier({
+        documentCode: targetAiDocument.code,
+        documentName: targetAiDocument.name,
+        businessName: userProfile?.businessName || 'Exporter Enterprise',
+        location: userProfile?.location || 'India',
+        pan: panNumber || 'PENDING_REGISTRATION',
+        adCode: adCode || 'PENDING_AD_CODE',
+        bankDetails: bankAccount || 'Designated Bank',
+        signatory: directorAadhaar || 'Authorized Signatory'
+      });
+      setGeneratedDraftText(draft.content);
       setWizardStep(3);
-    }, 1200);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleSaveToVault = () => {
+  const handleSaveToVault = async () => {
     const fileName = isIec
       ? 'DGFT_IEC_Application_Prepared_DRAFT.pdf'
       : `${targetAiDocument.code}_Prepared_DRAFT.pdf`;
 
-    resolveDocumentWithAi(targetAiDocument.id, fileName);
+    await resolveDocumentWithAi(targetAiDocument.id, fileName, generatedDraftText);
+    closeAiDocumentAgent();
   };
 
   return (
@@ -189,6 +205,7 @@ export const AiDocumentAgentModal: React.FC = () => {
                     type="text"
                     value={panNumber}
                     onChange={e => setPanNumber(e.target.value)}
+                    placeholder="e.g. AAACS1234F"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-mono bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   />
                 </div>
@@ -200,6 +217,7 @@ export const AiDocumentAgentModal: React.FC = () => {
                     type="text"
                     value={dgftCategory}
                     onChange={e => setDgftCategory(e.target.value)}
+                    placeholder="e.g. Manufacturer Exporter"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   />
                 </div>
@@ -213,6 +231,7 @@ export const AiDocumentAgentModal: React.FC = () => {
                   type="text"
                   value={bankAccount}
                   onChange={e => setBankAccount(e.target.value)}
+                  placeholder="e.g. Account No, Bank Name, IFSC / SWIFT"
                   className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>
@@ -226,6 +245,7 @@ export const AiDocumentAgentModal: React.FC = () => {
                     type="text"
                     value={adCode}
                     onChange={e => setAdCode(e.target.value)}
+                    placeholder="e.g. 0291823"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-mono bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   />
                 </div>
@@ -237,6 +257,7 @@ export const AiDocumentAgentModal: React.FC = () => {
                     type="text"
                     value={directorAadhaar}
                     onChange={e => setDirectorAadhaar(e.target.value)}
+                    placeholder="e.g. Full Name of Director"
                     className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                   />
                 </div>
@@ -256,24 +277,12 @@ export const AiDocumentAgentModal: React.FC = () => {
                     </span>
                   </div>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200">
-                    Draft Preview
+                    Draft Ready
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs font-mono bg-white dark:bg-navy-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 leading-relaxed">
-                  <p className="text-teal-600 dark:text-teal-400 font-bold">
-                    // DGFT IEC APPLICATION DOSSIER — READY FOR SUBMISSION
-                  </p>
-                  <p>APPLICANT ENTITY: {userProfile.businessName}</p>
-                  <p>REGISTERED ADDRESS: {userProfile.location}</p>
-                  <p>PAN NUMBER: {panNumber}</p>
-                  <p>CATEGORY: {dgftCategory}</p>
-                  <p>FOREX ACCOUNT: {bankAccount}</p>
-                  <p>PORT AD CODE: {adCode} (Registered at JNPT Mumbai Port)</p>
-                  <p>AUTHORIZED SIGNATORY: {directorAadhaar}</p>
-                  <p className="text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    Validation Status: Pass (100% Schema Alignment for DGFT API v2)
-                  </p>
+                <div className="space-y-2 text-xs font-mono bg-white dark:bg-navy-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 leading-relaxed max-h-64 overflow-y-auto whitespace-pre-wrap">
+                  {generatedDraftText || `APPLICANT: ${userProfile?.businessName || 'Exporter'}\nPAN: ${panNumber || 'PENDING'}\nAD CODE: ${adCode || 'PENDING'}\nBANK: ${bankAccount || 'PENDING'}`}
                 </div>
               </div>
 

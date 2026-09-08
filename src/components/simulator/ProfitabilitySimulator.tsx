@@ -98,7 +98,7 @@ export const ProfitabilitySimulator: React.FC = () => {
               Financial & Cost Variables
             </h3>
             <span className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold">
-              Product: {selectedProduct.name}
+              Product: {selectedProduct?.name || 'Standard Export Cargo'}
             </span>
           </div>
 

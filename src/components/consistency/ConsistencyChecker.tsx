@@ -69,20 +69,34 @@ export const ConsistencyChecker: React.FC = () => {
           <span className="text-slate-300 dark:text-slate-700">➔</span>
 
           <div className={`flex items-center gap-1.5 font-bold ${
-            consistencyData.isConsistent ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+            consistencyData?.isConsistent ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
           }`}>
-            {consistencyData.isConsistent ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+            {consistencyData?.isConsistent ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
             <span>4. Result</span>
           </div>
         </div>
       </div>
 
-      {/* Overall Status Banner */}
-      <div className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-        consistencyData.isConsistent
-          ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
-          : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
-      }`}>
+      {!consistencyData ? (
+        <div className="glass-card rounded-2xl p-10 border border-slate-200/80 dark:border-slate-700/60 shadow-sm text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 mx-auto flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            Upload Commercial Invoice & Packing List to Run Audit
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Automated consistency checks require both your Commercial Invoice (EXP-INV-001) and Packing List (EXP-PL-001) in the Document Vault.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Overall Status Banner */}
+          <div className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+            consistencyData.isConsistent
+              ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
+              : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+          }`}>
         <div className="flex items-start gap-3">
           <div className={`p-2.5 rounded-xl text-white mt-0.5 ${
             consistencyData.isConsistent ? 'bg-emerald-500 shadow-md' : 'bg-rose-500 shadow-md'
@@ -203,6 +217,8 @@ export const ConsistencyChecker: React.FC = () => {
           ))}
         </div>
       </div>
+      </>
+      )}
 
     </div>
   );

@@ -28,6 +28,14 @@ export const ShipmentReviewModal: React.FC<ShipmentReviewModalProps> = ({ isOpen
 
   if (!isOpen) return null;
 
+  const activeProduct = selectedProduct || {
+    name: 'General Export Consignment',
+    quantity: 100,
+    unit: 'Units',
+    hsCode: '0000.00.00',
+    productValue: 100000
+  };
+
   const handleConfirm = () => {
     // Confetti explosion
     try {
@@ -41,9 +49,9 @@ export const ShipmentReviewModal: React.FC<ShipmentReviewModalProps> = ({ isOpen
     }
 
     createNewShipment({
-      productName: selectedProduct.name,
-      quantity: `${selectedProduct.quantity.toLocaleString()} ${selectedProduct.unit}`,
-      totalValueInr: selectedProduct.productValue
+      productName: activeProduct.name,
+      quantity: `${activeProduct.quantity.toLocaleString()} ${activeProduct.unit}`,
+      totalValueInr: activeProduct.productValue
     });
 
     onClose();
@@ -101,12 +109,12 @@ export const ShipmentReviewModal: React.FC<ShipmentReviewModalProps> = ({ isOpen
           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-navy-850 space-y-1">
             <span className="text-[10px] font-bold uppercase text-slate-400">Product Specification</span>
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 dark:text-white text-sm">{selectedProduct.name}</span>
-              <span className="font-bold text-teal-600 dark:text-teal-400">HS {selectedProduct.hsCode}</span>
+              <span className="font-bold text-slate-900 dark:text-white text-sm">{activeProduct.name}</span>
+              <span className="font-bold text-teal-600 dark:text-teal-400">HS {activeProduct.hsCode}</span>
             </div>
             <div className="flex justify-between text-slate-600 dark:text-slate-300 pt-1">
-              <span>Quantity: {selectedProduct.quantity.toLocaleString()} {selectedProduct.unit}</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">Value: ₹{selectedProduct.productValue.toLocaleString('en-IN')}</span>
+              <span>Quantity: {activeProduct.quantity.toLocaleString()} {activeProduct.unit}</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">Value: ₹{activeProduct.productValue.toLocaleString('en-IN')}</span>
             </div>
           </div>
 

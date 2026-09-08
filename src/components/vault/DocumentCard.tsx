@@ -16,6 +16,8 @@ import {
   Sparkles
 } from 'lucide-react';
 
+import { documentService } from '../../services/documentService';
+
 interface DocumentCardProps {
   document: DocumentItem;
   onPreview: (doc: DocumentItem) => void;
@@ -55,16 +57,20 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     }
   };
 
-  const handleDownloadSample = () => {
-    // Generate sample text file
-    const content = `EXPORTREADY COMPLIANCE DRAFT\nDocument: ${document.name}\nCode: ${document.code}\nAuthority: ${document.authority}\nRequired For: ${document.requiredFor}\nGenerated on: ${new Date().toLocaleDateString()}\nNote: For Indian Customs & DGFT filing review.`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `${document.code}_Sample_Template.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownloadDoc = () => {
+    if (document.fileData) {
+      documentService.downloadDocument(document);
+    } else {
+      // Fallback sample text file
+      const content = `EXPORTREADY COMPLIANCE DRAFT\nDocument: ${document.name}\nCode: ${document.code}\nAuthority: ${document.authority}\nRequired For: ${document.requiredFor}\nGenerated on: ${new Date().toLocaleDateString()}\nNote: For Indian Customs & DGFT filing review.`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = `${document.code}_Template.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
@@ -140,9 +146,9 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
                 <Eye className="w-4 h-4" />
               </button>
               <button
-                onClick={handleDownloadSample}
+                onClick={handleDownloadDoc}
                 className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-800"
-                title="Download Template / Export Copy"
+                title="Download Stored Document / Template"
               >
                 <Download className="w-4 h-4" />
               </button>

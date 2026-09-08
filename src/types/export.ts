@@ -21,6 +21,41 @@ export type JourneyStageId =
 
 export type StageStatus = 'completed' | 'in_progress' | 'action_required' | 'not_started';
 
+export interface UserAccount {
+  id: string;
+  email: string;
+  username: string;
+  passwordHash: string;
+  role: UserRole;
+  tradeType: TradeType;
+  language: string;
+  createdAt: string;
+}
+
+export interface BusinessProfile {
+  id: string;
+  userId: string;
+  businessName: string;
+  ownerName?: string;
+  location: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  businessType: string;
+  exportExperience: string;
+  phone: string;
+  email?: string;
+  gstin?: string;
+  iec?: string;
+  pan?: string;
+  adCode?: string;
+  vatId?: string;
+  importerCode?: string;
+  country?: string;
+  username?: string;
+  updatedAt: string;
+}
+
 export interface JourneyStage {
   id: JourneyStageId;
   title: string;
@@ -34,6 +69,7 @@ export interface JourneyStage {
 
 export interface ProductItem {
   id: string;
+  userId?: string;
   name: string;
   category: string;
   origin: string;
@@ -43,15 +79,17 @@ export interface ProductItem {
   quantity: number;
   unit: string;
   weight: number; // in kg
-  dimensions: string; // e.g. "40 x 30 x 25 cm"
+  dimensions: string;
   productValue: number; // in INR
   readinessScore: number; // 0-100
   shelfLifeDays?: number;
   certificationsNeeded: string[];
+  createdAt?: string;
 }
 
 export interface DocumentItem {
   id: string;
+  userId?: string;
   name: string;
   code: string;
   category: 'statutory' | 'customs' | 'commercial' | 'transport' | 'compliance';
@@ -59,8 +97,11 @@ export interface DocumentItem {
   requiredFor: string;
   mandatory: boolean;
   uploadedAt?: string;
-  fileSize?: string;
+  fileSize?: string | number;
   fileName?: string;
+  fileData?: string; // Base64 data URL for preview/download
+  mimeType?: string;
+  checksum?: string;
   authority: string;
   notes?: string;
   canAiAssist: boolean;
@@ -118,6 +159,7 @@ export interface ShipmentMilestone {
 
 export interface ShipmentRecord {
   id: string;
+  userId?: string;
   trackingNumber: string;
   senderName: string;
   senderLocation: string;
@@ -140,6 +182,39 @@ export interface ShipmentRecord {
   insurancePolicyNo: string;
   insuranceCoverageInr: number;
   liveCoordinates?: { lat: number; lng: number };
+  createdAt?: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  userId: string;
+  paymentId: string;
+  amount: number;
+  currency: 'INR' | 'USD';
+  status: 'succeeded' | 'pending' | 'failed';
+  planName: string;
+  billingPeriod: 'monthly' | 'annual';
+  invoiceNumber: string;
+  paymentMethod: string;
+  createdAt: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  read: boolean;
+  createdAt: string;
+}
+
+export interface OnboardingProgress {
+  id: string;
+  userId: string;
+  currentStep: number;
+  completed: boolean;
+  updatedAt: string;
 }
 
 export interface AssessmentQuestion {

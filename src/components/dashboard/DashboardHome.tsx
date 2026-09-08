@@ -28,7 +28,12 @@ export const DashboardHome: React.FC = () => {
     openDictionary
   } = useApp();
 
-  const businessName = userRole === 'sender' ? userProfile.businessName : receiverProfile.businessName;
+  const businessName =
+    userRole === 'sender'
+      ? userProfile?.businessName || 'Exporter'
+      : receiverProfile?.businessName || 'Buyer';
+
+  const originLocation = (userProfile?.location || 'India').split(',')[0] || 'India';
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in">
@@ -38,7 +43,7 @@ export const DashboardHome: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-              Good morning, {businessName} 👋
+              Good day, {businessName} 👋
             </h1>
           </div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
@@ -50,7 +55,7 @@ export const DashboardHome: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="px-3 py-1.5 rounded-xl glass-card text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Origin: {userProfile.location.split(',')[0]} (India)</span>
+            <span>Origin: {originLocation} (India)</span>
           </div>
           <button
             onClick={openDictionary}
@@ -83,73 +88,116 @@ export const DashboardHome: React.FC = () => {
       {/* Active Consignment & Quick Stat Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Active Shipment Telemetry Glimpse */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/60 shadow-lg">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400">
-                <Ship className="w-5 h-5" />
+        {/* Active Shipment Telemetry Glimpse or Empty Consignment state */}
+        {activeShipment ? (
+          <div className="lg:col-span-2 glass-card rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/60 shadow-lg">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400">
+                  <Ship className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
+                    Active Consignment
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Shipment #{activeShipment.trackingNumber}
+                  </h3>
+                </div>
               </div>
-              <div>
-                <span className="text-[11px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
-                  Active Consignment
-                </span>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Shipment #{activeShipment.trackingNumber}
-                </h3>
+
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border border-teal-300 dark:border-teal-700 animate-pulse">
+                🚢 In Transit
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900/60 border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase">Product & Cargo</span>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+                  {activeShipment.productName}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {activeShipment.quantity}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900/60 border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase">Route Corridor</span>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5 truncate">
+                  JNPT Mumbai ➔ Hamburg
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Carrier: {activeShipment.carrierName}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900/60 border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase">Estimated Arrival</span>
+                <p className="text-xs font-bold text-teal-600 dark:text-teal-400 mt-0.5">
+                  {activeShipment.estimatedArrival}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Container: {activeShipment.containerNo?.split(' ')[0]}
+                </p>
               </div>
             </div>
 
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border border-teal-300 dark:border-teal-700 animate-pulse">
-              🚢 In Transit
-            </span>
+            <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-200/60 dark:border-slate-800">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Current Location: Indian Ocean / Gateway Corridor (24 Days Remaining)
+              </span>
+              <button
+                onClick={() => setActiveTab('shipments')}
+                className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <span>View Live Map & Telemetry</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
+        ) : (
+          <div className="lg:col-span-2 glass-card rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/60 shadow-lg flex flex-col justify-between">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400">
+                  <Ship className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Consignments
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    No Active Consignments
+                  </h3>
+                </div>
+              </div>
 
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900/60 border border-slate-200/60 dark:border-slate-800">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">Product & Cargo</span>
-              <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5 truncate">
-                {activeShipment.productName}
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400">
+                Awaiting Cargo
+              </span>
+            </div>
+
+            <div className="py-6 text-center space-y-2">
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                You do not have any shipments in transit yet.
               </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {activeShipment.quantity}
+              <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+                Once your export documents and products are cataloged, initiate your first booking or container dispatch in the Shipment Tracker.
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900/60 border border-slate-200/60 dark:border-slate-800">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">Route Corridor</span>
-              <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5 truncate">
-                JNPT Mumbai ➔ Hamburg
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Carrier: {activeShipment.carrierName}
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900/60 border border-slate-200/60 dark:border-slate-800">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">Estimated Arrival</span>
-              <p className="text-xs font-bold text-teal-600 dark:text-teal-400 mt-0.5">
-                {activeShipment.estimatedArrival}
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Container: {activeShipment.containerNo?.split(' ')[0]}
-              </p>
+            <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => setActiveTab('shipments')}
+                className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 flex items-center gap-1 cursor-pointer"
+              >
+                <span>Go to Shipment Manager</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-200/60 dark:border-slate-800">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Current Location: Indian Ocean / Gateway Corridor (24 Days Remaining)
-            </span>
-            <button
-              onClick={() => setActiveTab('shipments')}
-              className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              <span>View Live Map & Telemetry</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Export Finance & Profitability Summary Card */}
         <div className="glass-card rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/60 shadow-lg flex flex-col justify-between">
